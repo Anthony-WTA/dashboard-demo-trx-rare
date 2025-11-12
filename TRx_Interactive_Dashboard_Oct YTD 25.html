@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRx Pharmacy Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .kpi-card.negative {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: #000000;
+        }
+        
+        .kpi-card.warning {
+            background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+            color: #000000;
+        }
+        
+        .kpi-card.positive {
+            background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
+        }
+        
+        .kpi-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-card.negative .kpi-value, .kpi-card.warning .kpi-value {
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+        }
+        
+        .kpi-card:not(.negative):not(.warning) .kpi-value {
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .kpi-label {
+            font-size: 0.9em;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .chart-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .insights-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .insights-title {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .insight-item {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .insight-item:before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>TRx Pharmacy Performance Dashboard</h1>
+        <p class="subtitle">January - October 2025 Analysis</p>
+        
+        <!-- KPI Cards -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-value">$4.23M</div>
+                <div class="kpi-label">Total Revenue</div>
+            </div>
+            <div class="kpi-card negative">
+                <div class="kpi-value">0.78%</div>
+                <div class="kpi-label">Overall Margin</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-value">$32.8K</div>
+                <div class="kpi-label">Total Gross Profit</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">1,091</div>
+                <div class="kpi-label">Total Prescriptions</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">$3878</div>
+                <div class="kpi-label">Avg Transaction</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-value">10</div>
+                <div class="kpi-label">Loss-Making Products</div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-box">
+                <h3 class="chart-title">Revenue & Margin Trend</h3>
+                <canvas id="revenueChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3 class="chart-title">Monthly Profit/Loss</h3>
+                <canvas id="profitChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3 class="chart-title">Top Products by Revenue</h3>
+                <canvas id="productsChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3 class="chart-title">Transaction Volume Growth</h3>
+                <canvas id="transactionsChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Problem Products Table -->
+        <div class="table-container">
+            <h3 class="chart-title">Critical Problem Products (Highest Revenue with Negative Margins)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Revenue</th>
+                        <th>Margin %</th>
+                        <th>Total Loss</th>
+                        <th>Action Required</th>
+                    </tr>
+                </thead>
+                <tbody id="problemProducts">
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Insights -->
+        <div class="insights-box">
+            <h3 class="insights-title">Key Insights & Recommendations</h3>
+            <div class="insight-item">Overall margin (0.78%) is critically below industry standard (15-25%)</div>
+            <div class="insight-item">10 products are currently selling at a loss</div>
+            <div class="insight-item">May showed the best performance with 3.20% margin - analyze what worked</div>
+            <div class="insight-item">Revenue grew 758.2% from January to October</div>
+            <div class="insight-item">Immediate action needed on Cyltezo, Prolia, and Dupixent pricing</div>
+            <div class="insight-item">Consider discontinuing products with consistent negative margins below -3%</div>
+        </div>
+        
+        <div class="footer">
+            Dashboard generated on 2025-11-12 15:46 | Data source: TRx_Shipped_Master.xlsx
+        </div>
+    </div>
+    
+    <script>
+        // Data from Python
+        const monthlyData = {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct"], "revenue": [84773.92, 166393.17, 235193.35, 324359.86, 422217.44, 459104.69, 544653.43, 601399.24, 665574.25, 727497.35], "profit": [912.38, 112.4, 247.81, 4210.86, 13518.7, -1292.5, -1536.95, 1319.46, 9139.94, 6177.07], "margin": [1.08, 0.07, 0.11, 1.3, 3.2, -0.28, -0.28, 0.22, 1.37, 0.85], "transactions": [19, 33, 53, 73, 101, 127, 153, 159, 186, 187]};
+        const productsData = {"names": ["Humira(cf) Pen 40 Mg/0.4 Ml", "Mavyret 100-40 Mg Tablet", "Skyrizi 360 Mg/2.4 Ml On-Body", "Rinvoq Er 15 Mg Tablet", "Enbrel 50 Mg/ml Sureclick", "Cosentyx Sensoready 150 Mg/ml ", "Xifaxan 550 Mg Tablet", "Tremfya 200 Mg/2 Ml Pen Indct ", "Cyltezo(cf) Pen 40 Mg/0.8 Ml", "Dupixent 300 Mg/2 Ml Pen", "Prolia 60 Mg/ml Syringe", "Tremfya 200 Mg/2 Ml Pen", "Vosevi 400-100-100 Mg Tablet", "Truxima 500 Mg/50 Ml Vial", "Velsipity 2 Mg Tablet"], "revenue": [397310.95, 308028.48, 285758.19, 231205.06, 224482.18, 189901.56, 186167.98, 113374.29, 111013.74, 110672.31, 100324.11, 99490.86, 96428.26, 82280.95, 82002.43], "margin": [-0.26, -0.35, 0.72, 0.31, 0.76, 2.05, -0.94, -0.22, -3.97, -2.02, -3.87, 0.08, -0.98, 27.86, 1.8]};
+        const problemsData = {"names": ["Humira(cf) Pen 40 Mg/0.4 Ml", "Mavyret 100-40 Mg Tablet", "Xifaxan 550 Mg Tablet", "Tremfya 200 Mg/2 Ml Pen Indct ", "Cyltezo(cf) Pen 40 Mg/0.8 Ml", "Dupixent 300 Mg/2 Ml Pen", "Prolia 60 Mg/ml Syringe", "Vosevi 400-100-100 Mg Tablet", "Simponi Aria 50 Mg/4 Ml Vial", "Voquezna 10 Mg Tablet"], "revenue": [397310.95, 308028.48, 186167.98, 113374.29, 111013.74, 110672.31, 100324.11, 96428.26, 81031.75, 80549.47], "margin": [-0.26, -0.35, -0.94, -0.22, -3.97, -2.02, -3.87, -0.98, -1.03, -1.73], "loss": [-1033.00847, -1078.09968, -1749.979012, -249.42343799999998, -4407.245478000001, -2235.580662, -3882.5430570000003, -944.996948, -834.627025, -1393.505831]};
+        
+        // Chart defaults
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        
+        // Revenue & Margin Chart
+        const ctx1 = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: monthlyData.months,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: monthlyData.revenue,
+                    backgroundColor: 'rgba(102, 126, 234, 0.5)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Margin %',
+                    data: monthlyData.margin,
+                    type: 'line',
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Revenue ($)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Margin %'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Profit Chart
+        const ctx2 = document.getElementById('profitChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: monthlyData.months,
+                datasets: [{
+                    label: 'Gross Profit ($)',
+                    data: monthlyData.profit,
+                    backgroundColor: monthlyData.profit.map(v => v >= 0 ? 'rgba(39, 174, 96, 0.6)' : 'rgba(231, 76, 60, 0.6)'),
+                    borderColor: monthlyData.profit.map(v => v >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)'),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Products Chart - Fixed for Chart.js 3.x
+        const ctx3 = document.getElementById('productsChart').getContext('2d');
+        new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: productsData.names,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: productsData.revenue,
+                    backgroundColor: productsData.margin.map(v => v >= 0 ? 'rgba(39, 174, 96, 0.6)' : 'rgba(231, 76, 60, 0.6)'),
+                    borderColor: productsData.margin.map(v => v >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)'),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Revenue ($)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const margin = productsData.margin[context.dataIndex];
+                                return 'Margin: ' + margin.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Transactions Chart - Fixed
+        const ctx4 = document.getElementById('transactionsChart').getContext('2d');
+        new Chart(ctx4, {
+            type: 'line',
+            data: {
+                labels: monthlyData.months,
+                datasets: [{
+                    label: 'Transaction Count',
+                    data: monthlyData.transactions,
+                    borderColor: 'rgba(118, 75, 162, 1)',
+                    backgroundColor: 'rgba(118, 75, 162, 0.2)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Transactions'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Populate problem products table
+        const tbody = document.getElementById('problemProducts');
+        problemsData.names.forEach((name, i) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${name}</td>
+                <td>${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(problemsData.revenue[i])}</td>
+                <td class="negative">${problemsData.margin[i].toFixed(2)}%</td>
+                <td class="negative">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(problemsData.loss[i]))}</td>
+                <td>${problemsData.margin[i] < -3 ? 'URGENT - Renegotiate' : 'Review Pricing'}</td>
+            `;
+        });
+    </script>
+</body>
+</html>
